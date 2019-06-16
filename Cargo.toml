@@ -1,0 +1,11 @@
+[package]
+name = "term_select"
+version = "0.1.0"
+authors = ["Devin Ragotzy <devin.ragotzy@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+termcolor="1.0.5"
+failure="0.1.5"
+colored="1.8"
+console = "0.7.5"
