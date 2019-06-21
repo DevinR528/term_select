@@ -6,3 +6,4 @@ pub use selector::{ Color, Highlighter, SelectHandler, Selector, Term, };
 
 mod derive;
 pub use derive as select_derive;
+
