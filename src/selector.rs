@@ -98,7 +98,7 @@ impl CursorUtils for Term {
 /// Returns Selector for building arrow-able cli programmes.
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use std::io::Error;
 /// use term_select::{
@@ -383,7 +383,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
