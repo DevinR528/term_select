@@ -37,44 +37,45 @@ impl<'a, T: Clone + Copy + 'static> ActionBuilder<'a, T> {
         assert!(self.func.is_some());
         let sel_action = SelectAction::new(self.name, self.func.take().unwrap(), self.sub);
         self.app.menu.item_handles.push(sel_action);
+        self.app.menu.items.push(self.name);
         self.app
     }
 }
 
 pub struct AppBuilder<'s, T> {
     menu: Selector<'s, T>,
+    color: Option<Color>,
+    sel_char: Option<&'s str>,
 }
 impl<'s, T: Clone + Copy + 'static> AppBuilder<'s, T> {
 
     pub fn new() -> Self {
-        AppBuilder { menu: Selector::default(), }
+        AppBuilder { menu: Selector::default(), color: None, sel_char: None }
     }
 
     pub fn item_name(&'s mut self, name: &'s str) -> ActionBuilder<'s, T> {
-        // call select_color or select_char first
-        assert!(self.menu.sel_char.is_some() || self.menu.sel_color.is_some());
         ActionBuilder::new(name, self)
     }
 
     pub fn select_color(&mut self, color: Color) -> &mut Self {
-        self.menu.sel_color = Some(color);
+        self.color = Some(color);
         self
     }
 
     pub fn select_char(&mut self, select_char: &'s str) -> &mut Self {
-        self.menu.sel_char = Some(select_char);
+        self.sel_char = Some(select_char);
         self
     }
 
-    pub fn menu_item(&mut self) -> &mut Self {
-        // we need one or the other in order to show selected menu item
-        assert!(self.menu.sel_char.is_some() || self.menu.sel_color.is_some());
+    pub fn new_menu_item(&mut self) -> &mut Self {
         self
     }
 
     pub fn display(&mut self, term: &Term, res: Option<T>) -> Result<(), std::io::Error> {
         // we need one or the other in order to show selected menu item
-        assert!(self.menu.sel_char.is_some() || self.menu.sel_color.is_some());
+        assert!(self.sel_char.is_some() || self.color.is_some());
+        self.menu.sel_char = self.sel_char;
+        self.menu.sel_color = self.color;
         self.menu.display_loop(term, res)
     }
 }

@@ -6,7 +6,7 @@ fn main() -> io::Result<()> {
     let term = Term::stdout();
 
     AppBuilder::new()
-        .menu_item()
+        .new_menu_item()
         .select_color(Color::Green)
         .item_name("hello")
             .action(|t: Term, _res: Option<()>| -> io::Result<Option<()>> {
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
             })
             .push_menu_item()
 
-        .menu_item()
+        .new_menu_item()
         .select_color(Color::Green)
         .item_name("goodbye")
             .action(|t: Term, _res: Option<()>| -> io::Result<Option<()>> {

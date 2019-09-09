@@ -110,7 +110,7 @@ where
 /// ```
 pub struct Selector<'c, T> {
     pub(crate) item_handles: Vec<SelectAction<'c, T>>,
-    items: Vec<&'c str>,
+    pub(crate) items: Vec<&'c str>,
     pub(crate) sel_color: Option<Color>,
     pub(crate) sel_char: Option<&'c str>,
 }
@@ -269,8 +269,11 @@ where
     pub fn display_loop(&self, term: &Term, result: Option<T>) -> Result<(), io::Error> {
         let mut index = 0;
         loop {
+            // TODO until term.hide_cursor() works
+            let esc = "\u{001B}";
+            term.write_str(&format!("{}[?25l", esc))?;
+            // term.hide_cursor()?;
             term.clear_screen()?;
-            term.hide_cursor()?;
             for (i, line) in self.iter().enumerate() {
                 if i == index {
                     // build color and selected char into string
@@ -311,7 +314,6 @@ where
                     // this will allow back button
                     // how to check if we are at top level
                     term.clear_screen()?;
-                    term.show_cursor()?;
                     return Ok(());
                 }
                 Key::Escape => {
