@@ -4,26 +4,21 @@ use std::io;
 use colored::Colorize;
 pub use console::{Color, Key, Term};
 
-use crate::term_utils::CursorUtils;
-
 // Move all out to mod and lib is Derive so you build a struct to hold values and
 // methods are the handlers?
-pub type FuncBoxy<'s, T> = Box<dyn Fn(Term, Option<T>) -> io::Result<Option<T>> + 'static>;
+pub type FuncBox<'s, T> = Box<dyn Fn(Term, Option<T>) -> io::Result<Option<T>> + 'static>;
 
-pub struct SelectHandler<'s, T>
-where
-    T: Clone + Copy,
-{
+pub struct SelectAction<'s, T> {
     item: &'s str,
     sub_menu: Option<&'s Selector<'s, T>>,
-    func: FuncBoxy<'s, T>,
+    func: FuncBox<'s, T>,
 }
 
-impl<'s, T> SelectHandler<'s, T>
+impl<'s, T> SelectAction<'s, T>
 where
     T: Clone + Copy,
 {
-    /// Returns SelectHandler for building up a Selector.
+    /// Returns SelectAction for building up a Selector.
     ///
     /// Arguments:
     ///
@@ -37,7 +32,7 @@ where
     /// use std::io::Error;
     /// use term_select::{
     ///     Selector, Color, Term,
-    ///     Highlighter, SelectHandler
+    ///     Highlighter, SelectAction
     /// };
     ///
     /// let bye =|t: Term, res: Option<u8>| -> Result<Option<u8>, Error> {
@@ -46,7 +41,7 @@ where
     /// };
     ///
     /// let sub_v = vec![
-    ///     SelectHandler::new("goodbye", bye, None),
+    ///     SelectAction::new("goodbye", bye, None),
     /// ];
     /// let sub = Selector::new(sub_v, Highlighter::BgColor((Color::Magenta)));
     ///
@@ -56,8 +51,8 @@ where
     /// };
     ///
     /// let main_v = vec![
-    ///     SelectHandler::new("hello", hi, Some(&sub)),
-    ///     SelectHandler::new("hello number two", hi, Some(&sub)),
+    ///     SelectAction::new("hello", hi, Some(&sub)),
+    ///     SelectAction::new("hello number two", hi, Some(&sub)),
     /// ];
     /// let main = Selector::new(main_v, Highlighter::BgColor((Color::Green)));
     /// ```
@@ -68,7 +63,7 @@ where
     where
         F: Fn(Term, Option<T>) -> io::Result<Option<T>> + 'static,
     {
-        SelectHandler {
+        SelectAction {
             item: s,
             sub_menu: sel,
             func: Box::new(f),
@@ -83,18 +78,6 @@ pub enum Highlighter<'s> {
     Character(&'s str),
 }
 
-impl CursorUtils for Term {
-    fn cursor_hide(&self) -> io::Result<()> {
-        let esc = "\u{001B}";
-        Ok(self.write_str(&format!("{}[?25l", esc))?)
-    }
-
-    fn cursor_show(&self) -> io::Result<()> {
-        let esc = "\u{001B}";
-        Ok(self.write_str(&format!("{}[0H{}[0J{}[?25h", esc, esc, esc))?)
-    }
-}
-
 /// Returns Selector for building arrow-able cli programmes.
 ///
 /// # Examples
@@ -103,7 +86,7 @@ impl CursorUtils for Term {
 /// use std::io::Error;
 /// use term_select::{
 ///     Selector, Color, Term,
-///     Highlighter, SelectHandler
+///     Highlighter, SelectAction
 /// };
 ///
 /// let bye =|t: Term, res: Option<u8>| -> Result<Option<u8>, Error> {
@@ -112,7 +95,7 @@ impl CursorUtils for Term {
 /// };
 ///
 /// let sub_v = vec![
-///     SelectHandler::new("goodbye", bye, None),
+///     SelectAction::new("goodbye", bye, None),
 /// ];
 /// let sub = Selector::new(sub_v, Highlighter::BgColor((Color::Magenta)));
 ///
@@ -122,8 +105,8 @@ impl CursorUtils for Term {
 /// };
 ///
 /// let main_v = vec![
-///     SelectHandler::new("hello", hi, Some(&sub)),
-///     SelectHandler::new("hello number two", hi, Some(&sub)),
+///     SelectAction::new("hello", hi, Some(&sub)),
+///     SelectAction::new("hello number two", hi, Some(&sub)),
 /// ];
 /// let main = Selector::new(main_v, Highlighter::BgColor((Color::Green)));
 /// ```
@@ -131,14 +114,22 @@ impl CursorUtils for Term {
 /// let mut t = Term::stdout();
 /// main.display_loop(&mut t, None)?;
 /// ```
-pub struct Selector<'c, T>
-where
-    T: Clone + Copy,
-{
-    item_handles: Vec<SelectHandler<'c, T>>,
+pub struct Selector<'c, T> {
+    pub(crate) item_handles: Vec<SelectAction<'c, T>>,
     items: Vec<&'c str>,
-    sel_color: Option<Color>,
-    sel_char: Option<&'c str>,
+    pub(crate) sel_color: Option<Color>,
+    pub(crate) sel_char: Option<&'c str>,
+}
+
+impl<'c, T> Default for Selector<'c, T> {
+    fn default() -> Self {
+        Self {
+            item_handles: vec![],
+            items: vec![],
+            sel_color: None,
+            sel_char: None,
+        }
+    }
 }
 
 impl<'c, T> Selector<'c, T>
@@ -157,7 +148,7 @@ where
     /// use std::io::Error;
     /// use term_select::{
     ///     Selector, Color, Term,
-    ///     Highlighter, SelectHandler
+    ///     Highlighter, SelectAction
     /// };
     ///
     /// let hi = |t: Term, r: Option<u8>| -> Result<Option<u8>, Error> {
@@ -165,15 +156,15 @@ where
     ///     Ok(None)
     /// };
     ///
-    /// let v = vec![ SelectHandler::new("hello", hi, None) ];
+    /// let v = vec![ SelectAction::new("hello", hi, None) ];
     ///
     /// let sel = Selector::new(v, Highlighter::BgColor((Color::Green)));
     /// ```
-    pub fn new(opt_handle: Vec<SelectHandler<'c, T>>, high: Highlighter<'c>) -> Self {
+    pub fn new(opt_handle: Vec<SelectAction<'c, T>>, high: Highlighter<'c>) -> Self {
         let mut i = Vec::new();
 
         for h in opt_handle.iter() {
-            i.push(h.item.clone());
+            i.push(h.item);
         }
 
         let (color, s_char) = match high {
@@ -193,8 +184,8 @@ where
     fn build_selected_str(&self, s: &str) -> String {
         let sel = self
             .sel_char
-            .map(|c| String::from(format!("{} ", c)))
-            .or(Some("".into()))
+            .map(|c| format!("{} ", c))
+            .or_else(|| Some("".into()))
             .unwrap();
 
         if let Some(c) = self.sel_color {
@@ -245,7 +236,7 @@ where
     /// use std::io::Error;
     /// use term_select::{
     ///     Selector, Color, Term,
-    ///     Highlighter, SelectHandler
+    ///     Highlighter, SelectAction
     /// };
     ///
     /// fn fake_main() -> Result<(), Error> {
@@ -255,7 +246,7 @@ where
     ///     };
     ///
     ///     let sub_v = vec![
-    ///         SelectHandler::new("goodbye", bye, None),
+    ///         SelectAction::new("goodbye", bye, None),
     ///     ];
     ///
     ///     let sub = Selector::new(sub_v, Highlighter::BgColor((Color::Magenta)));
@@ -268,8 +259,8 @@ where
     ///     };
     ///     
     ///     let main_v = vec![
-    ///         SelectHandler::new("hello", hi, Some(&sub)),
-    ///         SelectHandler::new("hello number two", hi, Some(&sub)),
+    ///         SelectAction::new("hello", hi, Some(&sub)),
+    ///         SelectAction::new("hello number two", hi, Some(&sub)),
     ///     ];
     ///
     ///     let main = Selector::new(main_v, Highlighter::BgColor((Color::Green)));
@@ -284,7 +275,7 @@ where
         let mut index = 0;
         loop {
             term.clear_screen()?;
-            term.cursor_hide()?;
+            term.hide_cursor()?;
             for (i, line) in self.iter().enumerate() {
                 if i == index {
                     // build color and selected char into string
@@ -292,7 +283,7 @@ where
 
                     term.write_line(&color_line)?;
                 } else {
-                    term.write_line(&format!("{}", line))?;
+                    term.write_line(line)?;
                 }
             }
             term.write_str("\r\nEsc to quit Left arrow to go back one menu.")?;
@@ -317,22 +308,19 @@ where
                     // calls the function provided for the selection
                     let res = (*handle.func)(term.clone(), result)?;
 
-                    match self.item_handles[index].sub_menu {
-                        Some(sub) => {
-                            sub.display_loop(term, res)?;
-                        }
-                        None => {}
+                    if let Some(sub) = self.item_handles[index].sub_menu {
+                        sub.display_loop(term, res)?;
                     }
                 }
                 Key::ArrowLeft => {
                     // this will allow back button
                     // how to check if we are at top level
                     term.clear_screen()?;
-                    term.cursor_show()?;
+                    term.show_cursor()?;
                     return Ok(());
                 }
                 Key::Escape => {
-                    term.cursor_show()?;
+                    term.show_cursor()?;
                     std::process::exit(0);
                 }
                 _ => {}
@@ -377,12 +365,14 @@ where
 {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         for handle in self.item_handles.iter() {
-            let handle: &SelectHandler<T> = handle;
-            write!(fmt, "{}  {:#?}\r\n", handle.item, handle.sub_menu)?;
+            let handle: &SelectAction<T> = handle;
+            writeln!(fmt, "{}  {:#?}", handle.item, handle.sub_menu)?;
         }
         Ok(())
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -396,7 +386,7 @@ mod tests {
             Ok(None)
         };
 
-        let v = vec![SelectHandler::new("hello", hi, None)];
+        let v = vec![SelectAction::new("hello", hi, None)];
         let sel = Selector::new(v, Highlighter::BgColor(Color::Green));
 
         assert_eq!(sel.sel_color, Some(Color::Green));
@@ -409,7 +399,7 @@ mod tests {
             Ok(None)
         };
 
-        let v = vec![SelectHandler::new("hello", hi, None)];
+        let v = vec![SelectAction::new("hello", hi, None)];
         let sel = Selector::new(v, Highlighter::Character("*"));
 
         assert_eq!(sel.sel_char, Some("*"));
@@ -433,9 +423,9 @@ mod tests {
         };
 
         let v = vec![
-            SelectHandler::new("hello", hi, None),
-            SelectHandler::new("hello", hello, None),
-            SelectHandler::new("hello", bye, None),
+            SelectAction::new("hello", hi, None),
+            SelectAction::new("hello", hello, None),
+            SelectAction::new("hello", bye, None),
         ];
         let sel = Selector::new(v, Highlighter::Character("*"));
 
@@ -452,8 +442,8 @@ mod tests {
         let bye = |t: Term, res: Option<u8>| Ok(None);
 
         let v = vec![
-            SelectHandler::new("hello", hi, None),
-            SelectHandler::new("goodbye", bye, None),
+            SelectAction::new("hello", hi, None),
+            SelectAction::new("goodbye", bye, None),
         ];
 
         let sel = Selector::new(v, Highlighter::BgColor(Color::Green));
@@ -469,8 +459,8 @@ mod tests {
     fn test_term_stuff() -> Result<(), io::Error> {
         let mut t = Term::buffered_stdout();
 
-        t.cursor_hide()?;
+        t.hide_cursor()?;
 
-        Ok(t.cursor_show()?)
+        Ok(t.show_cursor()?)
     }
 }
