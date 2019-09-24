@@ -32,7 +32,7 @@ impl<'a, T: Clone + 'static> SubActionBuilder<'a, T> {
     /// Adds the sub menu to the ``
     pub fn push_sub_menu(&'a mut self) -> &'a mut ActionBuilder<'a, T> {
         assert!(self.func.is_some());
-        let sel_action = SelectAction::new(self.name, self.func.take().unwrap(), self.sub.take());
+        let sel_action = SelectAction::new(self.name, self.func.take().unwrap(), None);
         
         if let Some(add_to_sub) = &mut self.sub {
             add_to_sub.item_handles.push(sel_action);
@@ -59,6 +59,8 @@ impl<'s, T: Clone + 'static> SubBuilder<'s, T> {
     }
 
     pub fn item_name(&'s mut self, name: &'s str) -> SubActionBuilder<'s, T> {
+        // we need one or the other in order to show selected menu item
+        assert!(self.sel_char.is_some() || self.color.is_some());
         let menu = Selector::default();
         SubActionBuilder { sub: Some(menu), name, func: None, prev_builder: self }
     }
@@ -166,5 +168,11 @@ impl<'s, T: Clone + 'static> AppBuilder<'s, T> {
         self.menu.sel_char = self.sel_char;
         self.menu.sel_color = self.color;
         self.menu.display_loop(term, res)
+    }
+}
+
+impl<'d, T: Clone + 'static> std::fmt::Debug for AppBuilder<'d, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.menu.item_handles[0].sub_menu)
     }
 }

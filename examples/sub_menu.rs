@@ -20,12 +20,14 @@ fn main() -> io::Result<()> {
                 .item_name("Hit enter to print")
                     .action(|t: Term, res: Option<String>| -> io::Result<Option<String>> {
                         if let Some(name) = res {
+                            t.clear_screen()?;
                             t.write_str(&format!("Hello {}", name))?;
+                            t.write_str("\n\nHit enter to continue")?;
+                            t.read_line()?;
                         }
                         Ok(None)
                     })
                 .push_sub_menu()
-        .push_menu_item()            
-
-        .display(&term, None)
+        .push_menu_item()
+    .display(&term, None)
 }

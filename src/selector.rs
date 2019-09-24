@@ -9,8 +9,8 @@ pub use console::{Color, Key, Term};
 pub type FuncBox<'s, T> = Box<dyn Fn(Term, Option<T>) -> io::Result<Option<T>> + 'static>;
 
 pub struct SelectAction<'s, T> {
-    item: &'s str,
-    sub_menu: Option<Selector<'s, T>>,
+    pub(crate) item: &'s str,
+    pub(crate) sub_menu: Option<Selector<'s, T>>,
     func: FuncBox<'s, T>,
 }
 
