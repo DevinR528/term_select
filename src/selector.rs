@@ -10,13 +10,13 @@ pub type FuncBox<'s, T> = Box<dyn Fn(Term, Option<T>) -> io::Result<Option<T>> +
 
 pub struct SelectAction<'s, T> {
     item: &'s str,
-    sub_menu: Option<&'s Selector<'s, T>>,
+    sub_menu: Option<Selector<'s, T>>,
     func: FuncBox<'s, T>,
 }
 
 impl<'s, T> SelectAction<'s, T>
 where
-    T: Clone + Copy,
+    T: Clone
 {
     /// Returns SelectAction for building up a Selector.
     ///
@@ -62,7 +62,7 @@ where
     pub fn new(
         s: &'s str,
         f: FuncBox<'s, T>,
-        sel: Option<&'s Selector<'s, T>>
+        sel: Option<Selector<'s, T>>
     ) -> Self {
         SelectAction {
             item: s,
@@ -128,7 +128,7 @@ impl<'c, T> Default for Selector<'c, T> {
 
 impl<'c, T> Selector<'c, T>
 where
-    T: Clone + Copy,
+    T: Clone,
 {
     /// Returns Selector for building arrow-able cli programmes.
     ///
@@ -304,9 +304,9 @@ where
                 Key::Enter => {
                     let handle = &self.item_handles[index];
                     // calls the function provided for the selection
-                    let res = (*handle.func)(term.clone(), result)?;
+                    let res = (*handle.func)(term.clone(), result.clone())?;
 
-                    if let Some(sub) = self.item_handles[index].sub_menu {
+                    if let Some(sub) = &self.item_handles[index].sub_menu {
                         sub.display_loop(term, res)?;
                     }
                 }
@@ -358,7 +358,7 @@ impl<'i> Iterator for SelectIter<'i> {
 
 impl<'d, T> Debug for Selector<'d, T>
 where
-    T: Clone + Copy,
+    T: Clone,
 {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         for handle in self.item_handles.iter() {

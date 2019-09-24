@@ -1,6 +1,6 @@
 use std::io;
 
-use term_select::prelude::*;
+use term_select::{Term, Color, AppBuilder};
 
 fn main() -> io::Result<()> {
     let term = Term::stdout();
@@ -27,5 +27,6 @@ fn main() -> io::Result<()> {
                 Ok(None)
             })
             .push_menu_item()
+            
         .display(&term, None)
 }

@@ -2,7 +2,13 @@
 name = "term_select"
 version = "0.1.0"
 authors = ["Devin Ragotzy <devin.ragotzy@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Build selectable menu's in the terminal"
+repository = "https://github.com/DevinR528/term_select"
+categories = ["command-line-interface"]
+readme = "README.md"
 edition = "2018"
+exclude = ["examples/*",]
 
 [dependencies]
 termcolor="1.0"
