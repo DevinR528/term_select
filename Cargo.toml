@@ -1,5 +1,5 @@
 [package]
-name = "term_select"
+name = "term-select"
 version = "0.1.0"
 authors = ["Devin Ragotzy <devin.ragotzy@gmail.com>"]
 license = "MIT OR Apache-2.0"
