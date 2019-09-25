@@ -1,5 +1,4 @@
 use std::io;
-
 use term_select::{Term, Color, AppBuilder};
 
 fn main() -> io::Result<()> {
